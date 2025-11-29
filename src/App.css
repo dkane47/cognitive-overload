@@ -1,0 +1,90 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background-color: #f0f0f0;
+}
+
+.flashcard {
+  width: 400px;
+  height: 250px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.flashcard-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 30px;
+  text-align: center;
+}
+
+.flashcard-content p {
+  font-size: 24px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.answer-input {
+  width: 70%;
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+  height: 40px;
+}
+
+.answer-input:focus {
+  border-color: #4a90e2;
+}
+
+.qa {
+  height: 70px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  width: 350px;
+}
+
+.controls select {
+  padding: 5px;
+  font-size: 1rem;
+}
+
+.mode-button {
+  width: 180px;
+}
+
+.notes {
+  color: black;
+}
