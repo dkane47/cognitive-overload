@@ -11,7 +11,5 @@ export default [
   { front: "Mt. Harvard", back: "Sawatch"},
   { front: "Maroon Bells", back: "Elk"},
   { front: "Uncompahgre Peak", back: "San Juan"},
-  { front: "Crestone Needle", back: "Sangre de Cristo"},
   { front: "Mt. Blue Sky", back: "Front"},
-  { front: "La Plata", back: "Sawatch"},
 ];

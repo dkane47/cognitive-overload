@@ -1,16 +1,33 @@
 import { useState } from 'react'
 import { useEffect } from "react";
 import './App.css'
+
+//import files for decks
 import germanStates from './data/germanStates'
 import coloradoMountains from './data/coloradoMountains';
 import chineseDynasties from './data/chineseDynasties';
+import jerseyShore from './data/jerseyShore';
+import vicePresidents from './data/vicePresidents';
+import bostonTStations from './data/bostonTStations';
+import basketballColleges from './data/basketballColleges';
+import obscureLandmarks from './data/obscureLandmarks';
+import nonsense from './data/nonsense';
 
+
+//create deck variables
 const decks = {
   germanStates,
   coloradoMountains,
-  chineseDynasties
+  chineseDynasties,
+  jerseyShore,
+  vicePresidents,
+  bostonTStations,
+  basketballColleges,
+  obscureLandmarks,
+  nonsense
 };
 
+//function to create a random array at launch
 function generateRandomOrder(length) {
   const arr = Array.from({ length }, (_, i) => i);
   for (let i = arr.length - 1; i > 0; i--) {
@@ -20,6 +37,7 @@ function generateRandomOrder(length) {
   return arr;
 }
 
+//function to normalize strings for comparison
 function normalize(str) {
   return str
     .trim()
@@ -38,11 +56,13 @@ function App() {
   //logic elements of state
   const [selectedDeck, setSelectedDeck] = useState("germanStates");
   const cards = decks[selectedDeck];
-  const [mode, setMode] = useState(false); //for changing from random to intelligent, stay with random for now (false is random)
+  const [mode, setMode] = useState('random'); //for changing from random to intelligent, stay with random for now (false is random)
+  const [correct,setCorrect] = useState("false");
   const [toLearnList,setToLearnList] = useState([]); //list of indices that haven't been introduced yet
-  const [learningIndex,setLearningIndex] = useState(2);
+  const [learningIndex,setLearningIndex] = useState(0);
   const [learningList,setLearningList] = useState([]); //list of indices that are currently learning
   const [learnedList,setLearnedList] = useState([]); //list of indices that are being mixed randomly after learning
+  const [alternate,setAlternate] = useState(false); //whether to pull a new card or wait
   const [lineup,setLineup] = useState([-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]); //rotating queue for next up
   const [index,setIndex] = useState(0); //index in the rotating queue (%10)
   const [progress, setProgress] = useState(
@@ -52,94 +72,70 @@ function App() {
   
 
   const processAnswer = () => {
-    if (mode) { //do a bunch of stuff for intelligent mode
-      const isCorrect = normalize(currentCard.back) === normalize(userAnswer);
-      const currentQuestion = lineup[index];
-      const currentProgress = progress[currentQuestion];
+    const oldLineup = [...lineup];
+    const updatedLineup = [...oldLineup];
+    const isCorrect = normalize(currentCard.back) === normalize(userAnswer); // store correctness
+    setCorrect(isCorrect);
+    if (mode === 'intelligent') { //do a bunch of stuff for intelligent mode
+      const currentQuestion = oldLineup[index]; //store current question number
+      const currentProgress = progress[currentQuestion]; //store progress on current question number
       
       if (!isCorrect) { //if wrong, bump up two spots and mark incorrect
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[(index + 2) % 10] = currentQuestion;
-          updated[index] = -1;
-          return updated;
-        });
+        updatedLineup[(index + 2) % 10] = currentQuestion;
+        updatedLineup[index] = -1;
         markIncorrect(currentQuestion);
-        if (!learningList.includes(currentQuestion)) {
+        if (!learningList.includes(currentQuestion)) { //bump to learningList if wrong and not in learningList
           setLearningList(prev => {
             const updated = [...prev];
             updated.push(currentQuestion);
             return updated;
           });
         }
-      } else if (currentProgress < 2) { //if <2, bump up two spots, mark correct
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[(index + 2) % 10] = currentQuestion;
-          updated[index] = -1;
-          return updated;
-        });
+      } else if (currentProgress < 1) { //if <1, bump up two spots, mark correct
+        updatedLineup[(index + 2) % 10] = currentQuestion;
+        updatedLineup[index] = -1;
         markCorrect(currentQuestion);
-      } else if (currentProgress === 2) { //reset lineup and move to learnedList
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[index] = -1;
-          return updated;
-        });
-        setLearningList(prev => {
+      } else if (currentProgress === 1) { //if 1, reset lineup and move to learnedList
+        updatedLineup[index] = -1;
+        setLearningList(prev => { //remove from learningList
             const updated = [...prev];
             updated.splice(updated.indexOf(currentQuestion),1);
             return updated;
           });
-        if (!learnedList.includes(currentQuestion)) {
+          markCorrect(currentQuestion);
+        if (!learnedList.includes(currentQuestion)) { //add to learnedList
           setLearnedList(prev => {
             const updated = [...prev];
             updated.push(currentQuestion);
             return updated;
           });
         }
-      } else {
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[index] = -1;
-          return updated;
-        });
+      } else { //if progress is further
+        updatedLineup[index] = -1;
+        markCorrect(currentQuestion);
       }
     }
-    if (lineup[(index + 1) % 10] === -1) {
-      if (learningList.length === 0) {
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[(index + 1) % 10] = toLearnList[learningIndex];
-          return updated
-        });
+    if (oldLineup[(index + 1) % 10] === -1) { //logic if next card is -1
+      if (learningList.length === 0 && learningIndex < toLearnList.length) { //add new card from toLearnList
+        updatedLineup[(index + 1) % 10] = toLearnList[learningIndex];
         setLearningList(prev => {
           const updated = [...prev];
           updated.push(toLearnList[learningIndex]);
           return updated;
         });
         setLearningIndex(learningIndex + 1);
-      } else {
-        setLineup(prev => {
-          const updated = [...prev];
-          updated[(index + 1) % 10] = learnedList[Math.floor(Math.random() * learnedList.length)];
-          return updated
-        });
+      } else { //or pull a random card from learnedList
+        updatedLineup[(index + 1) % 10] = learnedList[Math.floor(Math.random() * learnedList.length)];
       }
     }
 
     //increment index
     setIndex(prevIndex => {
-      const newIndex = (prevIndex + 1) % lineup.length;
+      const newIndex = (prevIndex + 1) % oldLineup.length;
       return newIndex;
     });
+    setLineup(updatedLineup);
     setShowQuestion(false);
-    //run when answer is checked
-    //does logic behind the scenes but doesn't do anything major besides update the display
-    //increment index
-    //based on stage + correctness, decide whether to a) increment stage, add to lineup,
-    //b) not increment stage, add to lineup, c) move to learnedList, add to lineup
-    //clear last card in lineup
   };
 
   const nextCard = () => {
@@ -174,7 +170,7 @@ function App() {
     setLineup([-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]);
     setIndex(0);
     setUserAnswer("");
-    if (mode) {
+    if (mode === 'intelligent') {
       setToLearnList(order.slice(2));
       setCurrentCard(cards[order[0]]); // show the first random card
       setLearningList([order[0],order[1]]);
@@ -202,15 +198,26 @@ function App() {
           <option value="germanStates">German States</option>
           <option value="coloradoMountains">Colorado Mountains</option>
           <option value="chineseDynasties">Chinese Dynasties</option>
+          <option value="basketballColleges">Basketball Colleges</option>
+          <option value="bostonTStations">Boston T Stations</option>
+          <option value="jerseyShore">Jersey Shore Exits</option>
+          <option value="vicePresidents">US Vice Presidents</option>
+          <option value="obscureLandmarks">Obscure World Landmarks</option>
+          <option value="nonsense">Nonsense</option>
         </select>
-        <button className="mode-button" onClick={() => setMode(prev => !prev)}>
-          {mode ? "Intelligent Mode" : "Random Mode"}
-        </button>
+        <select
+            className="mode-select"
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+          >
+            <option value="random">Random Mode</option>
+            <option value="intelligent">Intelligent Mode</option>
+          </select>
       </div>
       <div className="flashcard">
         <div className="flashcard-content">
           <p className="qa">Q: {currentCard.front}</p>
-          <p className="qa">{showQuestion ? "" : "A: " + currentCard.back}</p>
+          <p className={correct ? "correct qa" : "incorrect qa"}>{showQuestion ? "" : "A: " + currentCard.back}</p>
           <input
             type="text"
             className="answer-input"

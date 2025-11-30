@@ -88,3 +88,13 @@ html, body {
 .notes {
   color: black;
 }
+
+.flashcard-content p.correct {
+  color: green;
+  font-weight: bold;
+}
+
+.flashcard-content p.incorrect {
+  color: red;
+  font-weight: bold;
+}
